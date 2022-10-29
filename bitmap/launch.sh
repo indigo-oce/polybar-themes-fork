@@ -7,18 +7,21 @@ launch_bar() {
 	# Terminate already running bar instances
 	killall -q polybar
 
-	# Wait until the processes have been shut down
-	while pgrep -u $UID -x polybar >/dev/null; do sleep 1; done
+        # Wait until the processes have been shut down
+        while pgrep -u $UID -x polybar >/dev/null; do sleep 1; done
 
-	# Launch the bar
-	if [[ "$style" == "hack" || "$style" == "cuts" ]]; then
-		polybar -q top -c "$dir/$style/config.ini" &
-		polybar -q bottom -c "$dir/$style/config.ini" &
-	elif [[ "$style" == "pwidgets" ]]; then
-		bash "$dir"/pwidgets/launch.sh --main
-	else
-		polybar -q main -c "$dir/$style/config.ini" &	
-	fi
+        # Launch the bar -- multi-monitor support from
+        # https://github.com/adi1090x/polybar-themes/issues/116#issuecomment-895728572
+        for m in $(polybar --list-monitors | cut -d":" -f1); do
+            if [[ "$style" == "hack" || "$style" == "cuts" ]]; then
+                MONITOR=$m polybar -q top -c "$dir/$style/config.ini" &
+                MONITOR=$m polybar -q bottom -c "$dir/$style/config.ini" &
+            elif [[ "$style" == "pwidgets" ]]; then
+                bash "$dir"/pwidgets/launch.sh --main
+            else
+                MONITOR=$m polybar -q main -c "$dir/$style/config.ini" &
+            fi
+        done
 }
 
 if [[ "$1" == "--material" ]]; then
